@@ -148,7 +148,7 @@
             animation: knifeMove 1.5s infinite alternate ease-in-out;
         }
 
-        /* 9 PHOTOS STACK ARCHITECTURE */
+        /* 21 PHOTOS STACK ARCHITECTURE */
         .photo-stack {
             position: relative;
             width: 330px;
@@ -166,7 +166,7 @@
             border-radius: 16px;
             box-shadow: 0 12px 35px rgba(0,0,0,0.08);
             transition: transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.1), opacity 0.6s;
-            cursor: pointer;
+            cursor: default;
         }
 
         .photo-card img {
@@ -222,8 +222,7 @@
 </head>
 <body>
 
-    <audio id="lofi-stream" loop src="https://github.com/user-attachments/files/29147075/Ek.Minute.Er.Chumu.PenduJatt.Com.Se.mp3
-"></audio>
+    <audio id="lofi-stream" loop src="https://github.com/user-attachments/files/29147075/Ek.Minute.Er.Chumu.PenduJatt.Com.Se.mp3"></audio>
     <audio id="pop-sound" src="https://assets.mixkit.co/active_storage/sfx/2571/2571-84.wav"></audio>
 
     <button class="music-ctrl" onclick="toggleMusic()" id="music-btn">
@@ -241,25 +240,25 @@
 
     <div class="stage" id="stage-2">
         <div class="new-magic-logo">❤️✨</div>
-        <h2 class="stage-title">আমার চেনা মিষ্টি মেয়েটি আজ ২৩ বছরে পা দিলো!</h2>
+        <h2 class="stage-title">আমার চেনা মিষ্টি মেয়েটি আজ ২৩ বছরে পা দিলো!</h2>
         <p style="color: #6b7280; font-size: 1.1rem; margin-bottom: 25px;">হ্যাঁ, ঠিক ধরেছ, তুমিই সে! তোমার জন্য একটা ছোট্ট সারপ্রাইজ...</p>
         <button class="primary-btn" onclick="goToStage(3)">সারপ্রাইজটি শুরু করো ✨</button>
     </div>
 
     <div class="stage" id="stage-3">
-        <h2 class="stage-title" style="font-size: 1.8rem; margin-bottom: 35px;">বক্সটির ওপর যেকোনো জায়গায় ক্লিক করে কেকটি কাটো!</h2>
+        <h2 class="stage-title" style="font-size: 1.8rem; margin-bottom: 35px;">বক্সটির ওপর যেকোনো জায়গায় ক্লিক করে কেকটি কাটো!</h2>
         <div class="scratch-surface" onclick="sliceCake()">
             <div class="cake-graphic" id="cake-node">🎂</div>
             <div class="knife-pointer" id="knife-node"><i class="fa-solid fa-wand-sparkles"></i></div>
         </div>
     </div>
 
- <div class="stage" id="stage-4">
+    <div class="stage" id="stage-4">
         <h2 class="stage-title">কিছু মিষ্টি মুহূর্ত 📸</h2>
         
-        <p id="slider-status" style="color: #db2777; font-weight: 600; margin-bottom: 10px; font-size: 1rem; font-family: 'Hind Siliguri', sans-serif;">
-            <i class="fa-solid fa-play"></i> 
-        </p>
+        <button id="slider-action-btn" onclick="toggleSliderStatus()" style="background: linear-gradient(135deg, #db2777, #f472b6); color: white; border: none; padding: 8px 20px; font-size: 0.95rem; font-weight: 600; border-radius: 20px; cursor: pointer; margin-bottom: 20px; box-shadow: 0 4px 12px rgba(219, 39, 119, 0.2); font-family: 'Hind Siliguri', sans-serif; display: flex; align-items: center; gap: 8px; transition: all 0.2s;">
+            <i class="fa-solid fa-pause"></i> <span id="btn-text">অটো-স্লাইড থামাও</span>
+        </button>
 
         <div class="photo-stack" id="automated-stack">
             <div class="photo-card" style="transform: rotate(-5deg); z-index: 21;">
@@ -331,7 +330,7 @@
 
     <div class="stage" id="stage-5">
         <div class="new-magic-logo">👑💖</div>
-        <h2 class="stage-title" style="margin-bottom: 20px; font-size: 2.2rem;">হৃদয় থেকে কিছু কথা...</h2>
+        <h2 class="stage-title" style="margin-bottom: 20px; font-size: 2.2rem;">হৃদয় থেকে কিছু কথা...</h2>
         <div class="letter-card">
             <div class="letter-text" id="typewriter-content"></div>
         </div>
@@ -341,6 +340,18 @@
         const music = document.getElementById('lofi-stream'); 
         const popSound = document.getElementById('pop-sound');
         const musicBtn = document.getElementById('music-btn');
+
+        // স্লাইডারের গ্লোবাল ভ্যারিয়েবল ইঞ্জিন
+        let maxZIndex = 21; 
+        let currentTopIndex = 0; 
+        let autoSlideInterval = null;
+        let isPaused = false;
+        let cardsArray = [];
+
+        document.addEventListener("DOMContentLoaded", () => {
+            const cards = document.querySelectorAll(".photo-card");
+            cardsArray = Array.from(cards);
+        });
 
         function unlockAudioAndProceed() {
             music.play().then(() => {
@@ -359,92 +370,55 @@
             }
         }
 
-        function goToStage(stageNum) {
-            document.querySelectorAll('.stage').forEach(s => s.classList.remove('active'));
-            document.getElementById(`stage-${stageNum}`).classList.add('active');
+        // অটোমেটিক স্লাইডার রান টাইম লুপ
+        function startAutomaticSlider() {
+            if (autoSlideInterval) clearInterval(autoSlideInterval);
+            
+            autoSlideInterval = setInterval(() => {
+                if (!isPaused) {
+                    slideNextCard();
+                }
+            }, 3500); // ৩.৫ সেকেন্ড পর পর স্লাইড
         }
 
-        function sliceCake() {
-            const cake = document.getElementById('cake-node');
-            const knife = document.getElementById('knife-node');
-            
-            popSound.currentTime = 0;
-            popSound.play(); 
-            
-            knife.style.display = 'none';
-            cake.innerText = '🍰✨'; 
-            
-            triggerParticlesRain();
-            
-            setTimeout(() => {
-                goToStage(4);
-            }, 1300);
-        }
+        function slideNextCard() {
+            if (currentTopIndex >= cardsArray.length) {
+                // সব ছবি শেষ হলে আবার সুন্দর করে প্রথম থেকে রিসেট হবে
+                currentTopIndex = 0;
+                maxZIndex = 21;
+                cardsArray.forEach((card, idx) => {
+                    card.style.zIndex = cardsArray.length - idx;
+                    card.style.transform = `rotate(${Math.random() * 10 - 5}deg) scale(1) translateX(0) translateY(0)`;
+                    card.style.opacity = '1';
+                });
+                return;
+            }
 
-        let maxZIndex = 9;
-        function shiftCard(card) {
-            popSound.currentTime = 0;
-            popSound.play(); 
-            
-            card.style.transform = 'translateX(380px) translateY(-40px) rotate(30deg) scale(0.8)';
-            card.style.opacity = '0';
-            
+            const activeCard = cardsArray[currentTopIndex];
+            if (popSound) {
+                popSound.currentTime = 0;
+                popSound.play();
+            }
+
+            activeCard.style.transition = "transform 0.6s ease, opacity 0.6s ease";
+            activeCard.style.transform = 'translateX(380px) translateY(-40px) rotate(30deg) scale(0.8)';
+            activeCard.style.opacity = '0';
+
             setTimeout(() => {
                 maxZIndex--;
-                card.style.zIndex = maxZIndex;
-                card.style.transform = `rotate(${Math.random() * 10 - 5}deg)`;
-                card.style.opacity = '1';
-            }, 500);
+                activeCard.style.zIndex = maxZIndex;
+                activeCard.style.transform = `rotate(${Math.random() * 10 - 5}deg) scale(1) translateX(0) translateY(0)`;
+                activeCard.style.opacity = '1';
+            }, 550);
+
+            currentTopIndex++;
         }
 
-        function revealLetterStage() {
-            goToStage(5);
-            setTimeout(typeWriterEngine, 600);
-        }
-
-        const rawLetterString = `শুভ জন্মদিন, প্রিয় 💖\n\nআজকের এই বিশেষ দিনে পৃথিবীর সমস্ত আনন্দ, ভালোবাসা আর মিষ্টি হাসি তোমার জীবনে ধরা দিক—এটাই মন থেকে চাই। তোমার মাঝে এমন এক ஜাদুকরী ক্ষমতা আছে, যা দিয়ে তুমি চারপাশের সবকিছুকে আরও উজ্জ্বল এবং সুন্দর করে তুলতে পারো। তোমার ওই মিষ্টি হাসি আর নিষ্পাপ মনটা সত্যি খুব স্পেশাল।\n\nআশা করি তোমার আজকের দিনটি অফুরন্ত হাসি, চমৎকার সব সারপ্রাইজ আর মন ভালো করা মুহূর্ত দিয়ে ভরে উঠবে। তুমি যেমন আছ, ঠিক তেমনই থেকো—সবার মাঝে এভাবেই আনন্দ ছড়িয়ে যেও। নিজের প্রতি খেয়াল রেখো আর খুব ভালো থেকো! ✨ \n\nআজ চিঠিও লিখেছি আবার তুমি করেও বলেছি ।\n\n\t\t\t\t\ইতি 
-রূপম`;
-        
-        let charIndex = 0;
-        function typeWriterEngine() {
-            const targetNode = document.getElementById('typewriter-content');
-            if (charIndex < rawLetterString.length) {
-                let char = rawLetterString.charAt(charIndex);
-                if (char === '\n') {
-                    targetNode.innerHTML += '<br>';
-                } else {
-                    targetNode.innerHTML += char;
-                }
-                charIndex++;
-                setTimeout(typeWriterEngine, 45); 
-            }
-        }
-
-        function triggerParticlesRain() {
-            const canvas = document.getElementById('particles');
-            const colors = ['#f472b6', '#ec4899', '#fbcfe8', '#ffffaa', '#67e8f9'];
+        // বাটন দিয়ে প্লে/পজ স্টেট হ্যান্ডলিং মডিউল
+        function toggleSliderStatus() {
+            isPaused = !isPaused;
+            const actionBtn = document.getElementById("slider-action-btn");
             
-            for(let i=0; i<65; i++) {
-                const node = document.createElement('div');
-                node.style.position = 'absolute';
-                node.style.width = Math.random() * 10 + 6 + 'px';
-                node.style.height = node.style.width;
-                node.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
-                node.style.left = Math.random() * 100 + 'vw';
-                node.style.top = '-20px';
-                node.style.borderRadius = '50%';
-                
-                canvas.appendChild(node);
-                
-                node.animate([
-                    { transform: 'translateY(0) scale(1)', opacity: 1 },
-                    { transform: `translateY(105vh) translateX(${Math.random() * 100 - 50}px) scale(0.5)`, opacity: 0 }
-                ], {
-                    duration: Math.random() * 2000 + 1500,
-                    iterations: 1
-                }).onfinish = () => node.remove();
-            }
-        }
-    </script>
-</body>
-</html>
+            if (isPaused) {
+                actionBtn.innerHTML = `<i class="fa-solid fa-play"></i> <span id="btn-text">অটো-স্লাইড চালান</span>`;
+                actionBtn.style.background = "linear-gradient(135deg,
