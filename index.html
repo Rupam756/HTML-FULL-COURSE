@@ -421,4 +421,91 @@
             
             if (isPaused) {
                 actionBtn.innerHTML = `<i class="fa-solid fa-play"></i> <span id="btn-text">অটো-স্লাইড চালান</span>`;
-                actionBtn.style.background = "linear-gradient(135deg,
+                actionBtn.style.background = "linear-gradient(135deg, #10b981, #059669)"; // সবুজ প্লে বাটন
+            } else {
+                actionBtn.innerHTML = `<i class="fa-solid fa-pause"></i> <span id="btn-text">অটো-স্লাইড থামাও</span>`;
+                actionBtn.style.background = "linear-gradient(135deg, #db2777, #f472b6)"; // পিঙ্ক পজ বাটন
+            }
+        }
+
+        function goToStage(stageNum) {
+            document.querySelectorAll('.stage').forEach(s => s.classList.remove('active'));
+            document.getElementById(`stage-${stageNum}`).classList.add('active');
+            
+            if (stageNum === 4) {
+                isPaused = false; 
+                startAutomaticSlider();
+            } else {
+                clearInterval(autoSlideInterval);
+            }
+        }
+
+        function sliceCake() {
+            const cake = document.getElementById('cake-node');
+            const knife = document.getElementById('knife-node');
+            
+            if (popSound) {
+                popSound.currentTime = 0;
+                popSound.play(); 
+            }
+            
+            knife.style.display = 'none';
+            cake.innerText = '🍰✨'; 
+            
+            triggerParticlesRain();
+            
+            setTimeout(() => {
+                goToStage(4);
+            }, 1300);
+        }
+
+        function revealLetterStage() {
+            goToStage(5);
+            setTimeout(typeWriterEngine, 600);
+        }
+
+        const rawLetterString = `শুভ জন্মদিন, প্রিয় 💖\n\nআজকের এই বিশেষ দিনে পৃথিবীর সমস্ত আনন্দ, ভালোবাসা আর মিষ্টি হাসি তোমার জীবনে ধরা দিক—এটাই মন থেকে চাই। তোমার মাঝে এমন এক জাদুকরী ক্ষমতা আছে, যা দিয়ে তুমি চারপাশের সবকিছুকে আরও উজ্জ্বল এবং সুন্দর করে তুলতে পারো। তোমার ওই মিষ্টি হাসি আর নিষ্পাপ মনটা সত্যি খুব স্পেশাল।\n\nআশা করি তোমার আজকের দিনটি অফুরন্ত হাসি, চমৎকার সব সারপ্রাইজ আর মন ভালো করা মুহূর্ত দিয়ে ভরে উঠবে। তুমি যেমন আছ, ঠিক তেমনই থেকো—সবার মাঝে এভাবেই আনন্দ ছড়িয়ে যেও। নিজের প্রতি খেয়াল রেখো আর খুব ভালো থেকো! ✨ \n\nআজ চিঠিও লিখেছি আবার তুমি করেবলেছি ।\n\n\t\t\t\t\ইতি \nরূপম`;
+        
+        let charIndex = 0;
+        function typeWriterEngine() {
+            const targetNode = document.getElementById('typewriter-content');
+            if (charIndex < rawLetterString.length) {
+                let char = rawLetterString.charAt(charIndex);
+                if (char === '\n') {
+                    targetNode.innerHTML += '<br>';
+                } else {
+                    targetNode.innerHTML += char;
+                }
+                charIndex++;
+                setTimeout(typeWriterEngine, 45); 
+            }
+        }
+
+        function triggerParticlesRain() {
+            const canvas = document.getElementById('particles');
+            const colors = ['#f472b6', '#ec4899', '#fbcfe8', '#ffffaa', '#67e8f9'];
+            
+            for(let i=0; i<65; i++) {
+                const node = document.createElement('div');
+                node.style.position = 'absolute';
+                node.style.width = Math.random() * 10 + 6 + 'px';
+                node.style.height = node.style.width;
+                node.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                node.style.left = Math.random() * 100 + 'vw';
+                node.style.top = '-20px';
+                node.style.borderRadius = '50%';
+                
+                canvas.appendChild(node);
+                
+                node.animate([
+                    { transform: 'translateY(0) scale(1)', opacity: 1 },
+                    { transform: `translateY(105vh) translateX(${Math.random() * 100 - 50}px) scale(0.5)`, opacity: 0 }
+                ], {
+                    duration: Math.random() * 2000 + 1500,
+                    iterations: 1
+                }).onfinish = () => node.remove();
+            }
+        }
+    </script>
+</body>
+</html>
