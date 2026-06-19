@@ -330,7 +330,7 @@
 
     <div class="stage" id="stage-5">
         <div class="new-magic-logo">👑💖</div>
-        <h2 class="stage-title" style="margin-bottom: 20px; font-size: 2.2rem;">হৃদয় থেকে কিছু কথা...</h2>
+        <h2 class="stage-title" style="margin-bottom: 20px; font-size: 2.2rem;">হৃদয় থেকে কিছু কথা...</h2>
         <div class="letter-card">
             <div class="letter-text" id="typewriter-content"></div>
         </div>
@@ -372,13 +372,12 @@
 
         // অটোমেটিক স্লাইডার রান টাইম লুপ
         function startAutomaticSlider() {
+            // যদি আগে থেকে কোনো ইন্টারভাল থাকে, ক্লিয়ার করে একদম নতুন করে শুরু করা হচ্ছে
             if (autoSlideInterval) clearInterval(autoSlideInterval);
             
             autoSlideInterval = setInterval(() => {
-                if (!isPaused) {
-                    slideNextCard();
-                }
-            }, 3500); // ৩.৫ সেকেন্ড পর পর স্লাইড
+                slideNextCard();
+            }, 1500); // 1.5 সেকেন্ড পর পর স্লাইড
         }
 
         function slideNextCard() {
@@ -414,17 +413,22 @@
             currentTopIndex++;
         }
 
-        // বাটন দিয়ে প্লে/পজ স্টেট হ্যান্ডলিং মডিউল
+        // বাটন দিয়ে প্লে/পজ স্টেট হ্যান্ডলিং মডিউল (রিয়েল-টাইম ইন্টারভাল ক্লিয়ারিং সহ)
         function toggleSliderStatus() {
             isPaused = !isPaused;
             const actionBtn = document.getElementById("slider-action-btn");
             
             if (isPaused) {
+                // পজ মোড: ইন্টারভালটি পুরোপুরি ডিলেট করে দেওয়া হচ্ছে যাতে ব্যাকগ্রাউন্ড লুপ বন্ধ হয়ে যায়
+                clearInterval(autoSlideInterval);
+                autoSlideInterval = null;
                 actionBtn.innerHTML = `<i class="fa-solid fa-play"></i> <span id="btn-text">অটো-স্লাইড চালান</span>`;
                 actionBtn.style.background = "linear-gradient(135deg, #10b981, #059669)"; // সবুজ প্লে বাটন
             } else {
+                // প্লে মোড: আবার নতুন করে ইন্টারভাল ইঞ্জিন স্টার্ট করা হচ্ছে
                 actionBtn.innerHTML = `<i class="fa-solid fa-pause"></i> <span id="btn-text">অটো-স্লাইড থামাও</span>`;
                 actionBtn.style.background = "linear-gradient(135deg, #db2777, #f472b6)"; // পিঙ্ক পজ বাটন
+                startAutomaticSlider();
             }
         }
 
@@ -436,7 +440,10 @@
                 isPaused = false; 
                 startAutomaticSlider();
             } else {
-                clearInterval(autoSlideInterval);
+                if (autoSlideInterval) {
+                    clearInterval(autoSlideInterval);
+                    autoSlideInterval = null;
+                }
             }
         }
 
@@ -464,7 +471,7 @@
             setTimeout(typeWriterEngine, 600);
         }
 
-        const rawLetterString = `শুভ জন্মদিন, প্রিয় 💖\n\nআজকের এই বিশেষ দিনে পৃথিবীর সমস্ত আনন্দ, ভালোবাসা আর মিষ্টি হাসি তোমার জীবনে ধরা দিক—এটাই মন থেকে চাই। তোমার মাঝে এমন এক জাদুকরী ক্ষমতা আছে, যা দিয়ে তুমি চারপাশের সবকিছুকে আরও উজ্জ্বল এবং সুন্দর করে তুলতে পারো। তোমার ওই মিষ্টি হাসি আর নিষ্পাপ মনটা সত্যি খুব স্পেশাল।\n\nআশা করি তোমার আজকের দিনটি অফুরন্ত হাসি, চমৎকার সব সারপ্রাইজ আর মন ভালো করা মুহূর্ত দিয়ে ভরে উঠবে। তুমি যেমন আছ, ঠিক তেমনই থেকো—সবার মাঝে এভাবেই আনন্দ ছড়িয়ে যেও। নিজের প্রতি খেয়াল রেখো আর খুব ভালো থেকো! ✨ \n\nআজ চিঠিও লিখেছি আবার তুমি করেবলেছি ।\n\n\t\t\t\t\ইতি \nরূপম`;
+        const rawLetterString = `শুভ জন্মদিন, প্রিয় 💖\n\nআজকের এই বিশেষ দিনে পৃথিবীর সমস্ত আনন্দ, ভালোবাসা আর মিষ্টি হাসি তোমার জীবনে ধরা দিক—এটাই মন থেকে চাই। তোমার মাঝে এমন এক জাদুকরী ক্ষমতা আছে, যা দিয়ে তুমি চারপাশের সবকিছুকে আরও উজ্জ্বল এবং সুন্দর করে তুলতে পারো। তোমার ওই মিষ্টি হাসি আর নিষ্পাপ মনটা সত্যি খুব স্পেশাল।\n\nআশা করি তোমার আজকের দিনটি অফুরন্ত হাসি, চমৎকার সব সারপ্রাইজ আর মন ভালো করা মুহূর্ত দিয়ে ভরে উঠবে। তুমি যেমন আছ, ঠিক তেমনই থেকো—সবার মাঝে এভাবেই আনন্দ ছড়িয়ে যেও। নিজের প্রতি খেয়াল রেখো আর খুব ভালো থেকো! ✨ \n\nআজ চিঠিও লিখেছি আবার তুমি করে বলেছি।\n\n\t\t\t\t\ইতি \nরূপম`;
         
         let charIndex = 0;
         function typeWriterEngine() {
