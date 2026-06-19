@@ -40,7 +40,7 @@
             padding: 10px 20px;
             border-radius: 25px;
             cursor: pointer;
-            z-index: 10;
+            z-index: 100;
             font-weight: 600;
             color: #db2777;
             box-shadow: 0 4px 15px rgba(0,0,0,0.05);
@@ -165,8 +165,7 @@
             padding-bottom: 50px;
             border-radius: 16px;
             box-shadow: 0 12px 35px rgba(0,0,0,0.08);
-            cursor: pointer;
-            transform-origin: center;
+            transition: transform 0.6s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.6s ease;
         }
 
         .photo-card img {
@@ -174,7 +173,6 @@
             height: 100%;
             object-fit: cover;
             border-radius: 10px;
-            pointer-events: none;
         }
 
         .letter-card {
@@ -342,26 +340,16 @@
         const popSound = document.getElementById('pop-sound');
         const musicBtn = document.getElementById('music-btn');
 
-        // স্লাইডারের নতুন রি-ইঞ্জিনিয়ার্ড গ্লোবাল কন্ট্রোলস
-        let currentTopIndex = 0; 
+        // স্লাইডারের নতুন বুলেটিপ্রুফ ভ্যারিয়েবল লজিক
         let autoSlideInterval = null;
         let isPaused = false;
         let cardsArray = [];
-        let baseZIndex = 100; // রিসেট বাফার বেস ভ্যালু
+        let lowestZIndex = 1; // নিচের লেয়ার ট্র্যাকিং ভ্যালু
 
         document.addEventListener("DOMContentLoaded", () => {
-            initializeCardsStack();
-        });
-
-        function initializeCardsStack() {
             const cards = document.querySelectorAll(".photo-card");
             cardsArray = Array.from(cards);
-            
-            // শুরুতেই সমস্ত কার্ডের ট্রানজিশন টাইমিং এবং রানিং স্টাইল লক করা হলো
-            cardsArray.forEach((card, idx) => {
-                card.style.transition = "transform 0.8s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.8s ease, z-index 0.1s linear";
-            });
-        }
+        });
 
         function unlockAudioAndProceed() {
             music.play().then(() => {
@@ -380,67 +368,78 @@
             }
         }
 
-        // একদম পিওর ও সিকিউর লুপ রানার (কোনো টাইমিং লিক হবে না)
         function startAutomaticSlider() {
-            stopAutomaticSlider(); // আগে কোনো মেমোরি থাকলে ক্লিয়ার করবে
+            if (autoSlideInterval) clearInterval(autoSlideInterval);
             
             autoSlideInterval = setInterval(() => {
                 if (!isPaused) {
                     slideNextCard();
                 }
-            }, 3500); 
-        }
-
-        function stopAutomaticSlider() {
-            if (autoSlideInterval) {
-                clearInterval(autoSlideInterval);
-                autoSlideInterval = null;
-            }
+            }, 3500); // ঠিক ৩.৫ সেকেন্ড পর পর ছবি বদলাবে
         }
 
         function slideNextCard() {
             if (cardsArray.length === 0) return;
 
-            // বর্তমানে স্তূপের সবার উপরে যে কার্ডটি আছে তাকে খোঁজা হচ্ছে
-            const activeCard = cardsArray[currentTopIndex];
-            
+            // স্ট্যাকের সবচেয়ে ওপরে যে কার্ডটি দৃশ্যমান আছে তাকে খুঁজে বের করা (সর্বোচ্চ z-index)
+            let topCard = null;
+            let highestZ = -Infinity;
+
+            cardsArray.forEach(card => {
+                let currentZ = parseInt(card.style.zIndex) || 0;
+                // যদি কার্ডটি অলরেডি স্লাইড আউট না হয়ে থাকে
+                if (currentZ > highestZ && !card.dataset.slipped) {
+                    highestZ = currentZ;
+                    topCard = card;
+                }
+            });
+
+            // যদি সব কার্ড একবার করে স্লাইড হয়ে গিয়ে থাকে, তবে পুরো স্ট্যাক রিসেট করার মাস্টার লজিক
+            if (!topCard) {
+                lowestZIndex = 1;
+                cardsArray.forEach((card, idx) => {
+                    card.removeAttribute('data-slipped');
+                    card.style.zIndex = cardsArray.length - idx;
+                    card.style.transform = `rotate(${Math.random() * 10 - 5}deg) scale(1) translateX(0) translateY(0)`;
+                    card.style.opacity = '1';
+                });
+                return;
+            }
+
             if (popSound) {
                 popSound.currentTime = 0;
                 popSound.play();
             }
 
-            // ছবিটিকে ডানদিকে সরিয়ে অদৃশ্য করার অ্যানিমেশন
-            activeCard.style.transform = 'clientX(380px) translateY(-50px) rotate(35deg) scale(0.8)';
-            activeCard.style.opacity = '0';
+            // একদম নিখুঁত থ্রিডি স্লাইড অ্যানিমেশন চালু
+            topCard.style.transform = 'translateX(380px) translateY(-50px) rotate(35deg) scale(0.8)';
+            topCard.style.opacity = '0';
+            topCard.dataset.slipped = "true"; // কার্ডটিকে স্লিপড হিসেবে মার্ক করা হলো
 
-            // চোখের পলকে তাকে স্তূপের তলায় রি-পজিশন করার সেফ হ্যান্ডলার
+            // ছবিটা পুরোপুরি স্ক্রিনের বাইরে যাওয়ার পর তাকে পেছনের স্তূপের তলায় নিয়ে যাওয়া
             setTimeout(() => {
-                // জেনুইন লেয়ার ব্যাকগ্রাউন্ডে নামানোর লজিক
-                baseZIndex--;
-                activeCard.style.zIndex = baseZIndex;
-                
-                // আবার স্তূপের নিচে ফিরে আসবে নতুন র্যান্ডম কোণে
-                activeCard.style.transform = `rotate(${Math.random() * 10 - 5}deg) scale(1) translateX(0) translateY(0)`;
-                activeCard.style.opacity = '1';
-            }, 700);
-
-            // ইনডেক্স লুপ ঘুরিয়ে পরবর্তী কার্ডকে টার্গেট করা
-            currentTopIndex = (currentTopIndex + 1) % cardsArray.length;
+                lowestZIndex--;
+                topCard.style.zIndex = lowestZIndex;
+                topCard.style.transform = `rotate(${Math.random() * 10 - 5}deg) scale(1) translateX(0) translateY(0)`;
+                topCard.style.opacity = '1';
+                // স্লিপড মার্ক তুলে নেওয়া হলো যাতে পরের লুপে আবার কাউন্ট হয়
+                topCard.removeAttribute('data-slipped'); 
+            }, 600);
         }
 
-        // বাটন কন্ট্রোলার (টাইমিং ও স্টেট প্যারালাল লক করবে)
         function toggleSliderStatus() {
             isPaused = !isPaused;
             const actionBtn = document.getElementById("slider-action-btn");
             
             if (isPaused) {
-                stopAutomaticSlider(); // ব্যাকগ্রাউন্ডের টাইমার ইঞ্জিন ১০০% স্টপ
-                actionBtn.innerHTML = `<i class="fa-solid fa-play"></i> <span id="btn-text">অটো-স্লাইড চালান</span>`;
+                clearInterval(autoSlideInterval);
+                autoSlideInterval = null;
+                actionBtn.innerHTML = `<i class="fa-solid fa-play"></i> <span id="btn-text">Play</span>`;
                 actionBtn.style.background = "linear-gradient(135deg, #10b981, #059669)"; 
             } else {
-                actionBtn.innerHTML = `<i class="fa-solid fa-pause"></i> <span id="btn-text">অটো-স্লাইড থামাও</span>`;
+                actionBtn.innerHTML = `<i class="fa-solid fa-pause"></i> <span id="btn-text">Pause</span>`;
                 actionBtn.style.background = "linear-gradient(135deg, #db2777, #f472b6)"; 
-                startAutomaticSlider(); // আবার নতুন করে ফ্রেশ ইন্টারভাল চালু
+                startAutomaticSlider();
             }
         }
 
@@ -449,11 +448,13 @@
             document.getElementById(`stage-${stageNum}`).classList.add('active');
             
             if (stageNum === 4) {
-                isPaused = false;
-                initializeCardsStack();
+                isPaused = false; 
                 startAutomaticSlider();
             } else {
-                stopAutomaticSlider();
+                if (autoSlideInterval) {
+                    clearInterval(autoSlideInterval);
+                    autoSlideInterval = null;
+                }
             }
         }
 
